@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>TC's Calc</title>
+<style>
+  :root {
+    --bg: #0F1117;
+    --surface: #1A1D27;
+    --surface2: #232636;
+    --border: #2E3148;
+    --accent: #5B8DFF;
+    --accent-dim: rgba(91,141,255,0.12);
+    --green: #3ECFA0;
+    --green-dim: rgba(62,207,160,0.12);
+    --yellow: #F5C842;
+    --red: #FF6B6B;
+    --red-dim: rgba(255,107,107,0.1);
+    --text: #E8EAF0;
+    --text-sub: #7B80A0;
+    --text-dim: #4A4F6A;
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', sans-serif;
+    min-height: 100dvh; padding: 0 0 48px;
+  }
+  header { padding: 24px 20px 16px; border-bottom: 1px solid var(--border); }
+  .logo { font-size: 11px; font-weight: 600; letter-spacing: 0.18em; color: var(--text-sub); margin-bottom: 4px; }
+  header h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
+  .container { padding: 0 16px; }
+  .section-label {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--text-sub); margin: 24px 0 10px; display: flex; align-items: center; gap: 8px;
+  }
+  .badge {
+    font-size: 10px; color: var(--text-dim); background: var(--surface2);
+    border: 1px solid var(--border); border-radius: 4px; padding: 2px 6px;
+    letter-spacing: 0; text-transform: none; font-weight: 500;
+  }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .row { display: flex; align-items: center; padding: 14px 16px; border-bottom: 1px solid var(--border); gap: 12px; }
+  .row:last-child { border-bottom: none; }
+  .row.hidden { display: none !important; }
+  .row-label { font-size: 14px; color: var(--text-sub); flex: 1; }
+  .row-unit { font-size: 12px; color: var(--text-dim); white-space: nowrap; }
+  input[type="number"] {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    color: var(--text); font-family: inherit; font-size: 16px; font-weight: 500;
+    height: 42px; padding: 0 12px; text-align: right; width: 100px;
+    -webkit-appearance: none; appearance: none; outline: none; transition: border-color 0.15s;
+  }
+  input[type="number"]:focus { border-color: var(--accent); }
+  input[type="number"]::placeholder { color: var(--text-dim); }
+  .toggle-wrap { display: flex; gap: 6px; flex: 1; justify-content: flex-end; flex-wrap: wrap; }
+  .toggle-btn {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    color: var(--text-sub); cursor: pointer; font-size: 13px; font-weight: 600;
+    height: 40px; padding: 0 14px; transition: all 0.15s; white-space: nowrap;
+    -webkit-appearance: none; appearance: none; font-family: inherit;
+    touch-action: manipulation; user-select: none; -webkit-user-select: none;
+  }
+  .toggle-btn.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+  .toggle-btn.active-green { background: var(--green-dim); border-color: var(--green); color: var(--green); }
+  .result-wrap { margin-top: 28px; display: none; }
+  .result-wrap.show { display: block; }
+  .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+  .result-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 14px; }
+  .result-card.full { grid-column: 1 / -1; }
+  .result-card.green-card { background: var(--green-dim); border-color: var(--green); }
+  .result-card.yellow-card { background: rgba(245,200,66,0.08); border-color: var(--yellow); }
+  .result-card.blue-card { background: var(--accent-dim); border-color: var(--accent); }
+  .result-card.red-card { background: var(--red-dim); border-color: var(--red); }
+  .result-card.purple-card { background: rgba(180,100,255,0.1); border-color: rgba(180,100,255,0.5); }
+  .result-name { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-sub); margin-bottom: 6px; }
+  .result-val { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; line-height: 1; }
+  .result-val.green { color: var(--green); }
+  .result-val.yellow { color: var(--yellow); }
+  .result-val.accent { color: var(--accent); }
+  .result-val.red { color: var(--red); }
+  .result-val.purple { color: #C47CFF; }
+  .result-sub { font-size: 12px; color: var(--text-sub); margin-top: 4px; }
+  .loss-row { display: flex; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+  .loss-item { flex: 1; }
+  .loss-label { font-size: 10px; color: var(--text-dim); margin-bottom: 3px; }
+  .loss-val { font-size: 15px; font-weight: 600; color: var(--text-sub); }
+  .loss-val.main { color: var(--text); font-size: 17px; }
+  .error-msg {
+    background: rgba(255,80,80,0.1); border: 1px solid rgba(255,80,80,0.3);
+    border-radius: var(--radius-sm); color: #FF6B6B; font-size: 13px;
+    margin-top: 12px; padding: 10px 14px; display: none;
+  }
+  .error-msg.show { display: block; }
+  .note { font-size: 11px; color: var(--text-dim); margin-top: 6px; line-height: 1.5; }
+  footer { margin-top: 40px; text-align: center; font-size: 11px; color: var(--text-dim); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Truma Core</div>
+  <h1>Calc</h1>
+</header>
+
+<div class="container">
+
+  <!-- 目地サイズ -->
+  <div class="section-label">目地サイズ</div>
+  <div class="card">
+    <div class="row">
+      <span class="row-label">目地幅</span>
+      <input type="number" id="width" placeholder="10" min="1" max="100" inputmode="decimal" oninput="recalc()">
+      <span class="row-unit">mm</span>
+    </div>
+    <div class="row">
+      <span class="row-label">深さ</span>
+      <input type="number" id="depth" placeholder="10" min="1" max="100" inputmode="decimal" oninput="recalc()">
+      <span class="row-unit">mm</span>
+    </div>
+    <div class="row">
+      <span class="row-label">ロス率 <span class="badge">未入力=20%</span></span>
+      <input type="number" id="lossRate" placeholder="20" min="0" max="50" inputmode="decimal" oninput="recalc()">
+      <span class="row-unit">%</span>
+    </div>
+  </div>
+
+  <!-- 材料タイプ -->
+  <div class="section-label">材料タイプ</div>
+  <div class="card">
+    <div class="row">
+      <span class="row-label">使用材料</span>
+      <div class="toggle-wrap">
+        <button class="toggle-btn active" id="btn4L" onclick="selectMaterial('4L')">4L缶</button>
+        <button class="toggle-btn" id="btn6L" onclick="selectMaterial('6L')">6L缶</button>
+        <button class="toggle-btn" id="btn333" onclick="selectMaterial('333')">333mlカートリッジ</button>
+      </div>
+    </div>
+    <div class="row">
+      <span class="row-label" id="materialPriceLabel">缶単価（仕入れ）<span class="badge" style="margin-left:4px">任意</span></span>
+      <input type="number" id="canPrice" placeholder="3500" min="0" inputmode="decimal" oninput="recalc()">
+      <span class="row-unit" id="materialPriceUnit">円</span>
+    </div>
+  </div>
+
+  <!-- 施工情報 -->
+  <div class="section-label">施工情報 <span class="badge">すべて任意</span></div>
+  <div class="card">
+    <div class="row">
+      <span class="row-label">総延長</span>
+      <input type="number" id="totalLength" placeholder="100" min="0" inputmode="decimal" oninput="recalc()">
+      <span class="row-unit">m</span>
+    </div>
+    <div class="row">
+      <span class="row-label">m単価（請求）</span>
+      <input type="number" id="mPrice" placeholder="900" min="0" inputmode="decimal" oninput="recalc()">
+      <span class="row-unit">円/m</span>
+    </div>
+  </div>
+
+  <!-- プライマー -->
+  <div class="section-label">プライマー <span class="badge">任意・概算</span></div>
+  <div class="card">
+    <div class="row">
+      <span class="row-label">1缶容量</span>
+      <input type="number" id="primerCanMl" placeholder="500" min="0" inputmode="decimal" oninput="recalc()">
+      <span class="row-unit">ml</span>
+    </div>
+    <div class="row">
+      <span class="row-label">缶単価 <span class="badge" style="margin-left:4px">任意</span></span>
+      <input type="number" id="primerPrice" placeholder="800" min="0" inputmode="decimal" oninput="recalc()">
+      <span class="row-unit">円</span>
+    </div>
+  </div>
+  <div class="note">深さ×延長×標準塗布量(150g/m²・両面想定)から概算。材質により誤差あり。</div>
+
+  <div class="error-msg" id="errorMsg"></div>
+
+  <!-- 結果 -->
+  <div class="result-wrap" id="resultWrap">
+
+    <div class="section-label">1単位あたり（コーキング）</div>
+    <div class="result-grid">
+      <div class="result-card full">
+        <div class="result-name" id="r_mPerCanLabel">施工可能延長</div>
+        <div class="result-val" id="r_mPerCan">—</div>
+        <div class="result-sub" id="r_mPerCanSub"></div>
+        <div class="loss-row">
+          <div class="loss-item">
+            <div class="loss-label">ロスなし</div>
+            <div class="loss-val" id="r_mNoLoss">—</div>
+          </div>
+          <div class="loss-item">
+            <div class="loss-label" id="lossLabel">ロス込み（20%）</div>
+            <div class="loss-val main" id="r_mWithLoss">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="costPerMBlock" style="display:none">
+      <div class="result-grid">
+        <div class="result-card full">
+          <div class="result-name">材料費 / m</div>
+          <div class="result-val" id="r_costPerM">—</div>
+          <div class="result-sub">円/m</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="cansBlock" style="display:none">
+      <div class="section-label">コーキング材料</div>
+      <div class="result-grid">
+        <div class="result-card">
+          <div class="result-name">必要数</div>
+          <div class="result-val" id="r_cans">—</div>
+          <div class="result-sub">端数繰り上げ</div>
+        </div>
+        <div class="result-card" id="materialCostCard" style="display:none">
+          <div class="result-name">材料費合計</div>
+          <div class="result-val" id="r_materialCost">—</div>
+          <div class="result-sub">円</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="primerBlock" style="display:none">
+      <div class="section-label">プライマー（概算）</div>
+      <div class="result-grid">
+        <div class="result-card purple-card">
+          <div class="result-name">使用量</div>
+          <div class="result-val purple" id="r_primerMl">—</div>
+          <div class="result-sub">ml</div>
+        </div>
+        <div class="result-card purple-card">
+          <div class="result-name">必要缶数</div>
+          <div class="result-val purple" id="r_primerCans">—</div>
+          <div class="result-sub">端数繰り上げ</div>
+        </div>
+      </div>
+      <div class="result-grid" id="primerCostRow" style="display:none">
+        <div class="result-card purple-card full">
+          <div class="result-name">プライマー費</div>
+          <div class="result-val purple" id="r_primerCost">—</div>
+          <div class="result-sub">円</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="revenueBlock" style="display:none">
+      <div class="section-label">収支</div>
+      <div class="card" style="margin-bottom:10px">
+        <div class="row">
+          <span class="row-label">発注形態</span>
+          <div class="toggle-wrap">
+            <button class="toggle-btn active-green" id="rBtnSelf" onclick="switchRemovalResult('self')">自社施工</button>
+            <button class="toggle-btn" id="rBtnOutsource" onclick="switchRemovalResult('outsource')">外注</button>
+          </div>
+        </div>
+        <div class="row hidden" id="rOutsourcePriceRow">
+          <span class="row-label">外注費</span>
+          <input type="number" id="rOutsourcePrice" placeholder="150" min="0" inputmode="decimal" oninput="updateRevenue()">
+          <span class="row-unit">円/m</span>
+        </div>
+      </div>
+
+      <div class="result-grid">
+        <div class="result-card">
+          <div class="result-name">請求金額</div>
+          <div class="result-val" id="r_revenue">—</div>
+          <div class="result-sub">円</div>
+        </div>
+        <div class="result-card red-card" id="r_removalCostCard" style="display:none">
+          <div class="result-name">撤去外注費</div>
+          <div class="result-val red" id="r_removalCost">—</div>
+          <div class="result-sub">円</div>
+        </div>
+      </div>
+
+      <div class="result-grid">
+        <div class="result-card green-card full">
+          <div class="result-name">粗利益</div>
+          <div class="result-val green" id="r_profit">—</div>
+          <div class="result-sub" id="r_profitSub"></div>
+        </div>
+      </div>
+
+      <div class="result-grid">
+        <div class="result-card yellow-card full">
+          <div class="result-name">利益率</div>
+          <div class="result-val yellow" id="r_margin">—</div>
+          <div class="result-sub" id="r_marginNote"></div>
+        </div>
+      </div>
+
+      <div id="outsourceSalesBlock" style="display:none">
+        <div class="section-label">売上内訳（外注後）</div>
+        <div class="result-grid">
+          <div class="result-card blue-card">
+            <div class="result-name">売上 / m</div>
+            <div class="result-val accent" id="r_selfPerM">—</div>
+            <div class="result-sub">円/m</div>
+          </div>
+          <div class="result-card blue-card">
+            <div class="result-name">売上合計</div>
+            <div class="result-val accent" id="r_selfTotal">—</div>
+            <div class="result-sub">円</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>TC's Engine — Truma Core</footer>
+</div>
+
+<script>
+  let selectedMaterial = '4L';
+  let resultRemoval = 'self';
+  let calc = {};
+
+  const MATERIAL_ML = { '4L': 4000, '6L': 6000, '333': 333 };
+  const MATERIAL_UNIT = { '4L': '缶', '6L': '缶', '333': '本' };
+  const MATERIAL_LABEL = { '4L': '4L缶', '6L': '6L缶', '333': '333mlカートリッジ' };
+
+  function selectMaterial(type) {
+    selectedMaterial = type;
+    document.getElementById('btn4L').classList.toggle('active', type === '4L');
+    document.getElementById('btn6L').classList.toggle('active', type === '6L');
+    document.getElementById('btn333').classList.toggle('active', type === '333');
+
+    const unit = MATERIAL_UNIT[type];
+    document.getElementById('materialPriceLabel').innerHTML = (unit === '本' ? '本単価（仕入れ）' : '缶単価（仕入れ）') + '<span class="badge" style="margin-left:4px">任意</span>';
+    document.getElementById('materialPriceUnit').textContent = '円';
+    recalc();
+  }
+
+  function switchRemovalResult(type) {
+    resultRemoval = type;
+    document.getElementById('rBtnSelf').classList.toggle('active-green', type === 'self');
+    document.getElementById('rBtnOutsource').classList.toggle('active', type === 'outsource');
+    document.getElementById('rOutsourcePriceRow').classList.toggle('hidden', type === 'self');
+    updateRevenue();
+  }
+
+  function fmt(n) { return Math.round(n).toLocaleString('ja-JP'); }
+  function fmtD(n, d=1) { return n.toFixed(d); }
+
+  function recalc() {
+    const width = parseFloat(document.getElementById('width').value);
+    const depth = parseFloat(document.getElementById('depth').value);
+    const errEl = document.getElementById('errorMsg');
+
+    if (isNaN(width) || width <= 0 || isNaN(depth) || depth <= 0) {
+      document.getElementById('resultWrap').classList.remove('show');
+      errEl.classList.remove('show');
+      return;
+    }
+    errEl.classList.remove('show');
+
+    const lossRateRaw  = parseFloat(document.getElementById('lossRate').value);
+    const lossRate     = (!isNaN(lossRateRaw) && lossRateRaw >= 0) ? lossRateRaw : 20;
+    const isDefaultLoss = isNaN(parseFloat(document.getElementById('lossRate').value));
+
+    const canPrice  = parseFloat(document.getElementById('canPrice').value);
+    const totalLen  = parseFloat(document.getElementById('totalLength').value);
+    const mPrice    = parseFloat(document.getElementById('mPrice').value);
+    const primerCanMl = parseFloat(document.getElementById('primerCanMl').value);
+    const primerPrice = parseFloat(document.getElementById('primerPrice').value);
+
+    const unit = MATERIAL_UNIT[selectedMaterial];
+    const materialMl = MATERIAL_ML[selectedMaterial];
+    const mNoLoss   = (materialMl * 1000) / (width * depth) / 1000;
+    const mWithLoss = mNoLoss * (1 - lossRate / 100);
+
+    const hasCanPrice = !isNaN(canPrice) && canPrice > 0;
+    const hasTotalLen = !isNaN(totalLen) && totalLen > 0;
+    const hasMPrice   = !isNaN(mPrice) && mPrice > 0;
+    const hasPrimerCanMl = !isNaN(primerCanMl) && primerCanMl > 0;
+    const hasPrimerPrice = !isNaN(primerPrice) && primerPrice > 0;
+
+    const cansNeeded   = hasTotalLen ? Math.ceil(totalLen / mWithLoss) : null;
+    const materialCost = (cansNeeded !== null && hasCanPrice) ? cansNeeded * canPrice : null;
+    const costPerM = materialCost !== null && hasTotalLen
+      ? materialCost / totalLen
+      : (hasCanPrice ? canPrice / mWithLoss : null);
+    const revenue = (hasTotalLen && hasMPrice) ? totalLen * mPrice : null;
+
+    // プライマー概算: 150g/m² × 深さ(mm/1000) × 2面 × 延長(m)
+    const primerMl = hasTotalLen ? (150 * (depth/1000) * 2 * totalLen) : null;
+    const primerCans = (primerMl !== null && hasPrimerCanMl) ? Math.ceil(primerMl / primerCanMl) : null;
+    const primerCost = (primerCans !== null && hasPrimerPrice) ? primerCans * primerPrice : null;
+
+    calc = { mNoLoss, mWithLoss, lossRate, isDefaultLoss, mPrice, totalLen, materialCost, revenue, costPerM, hasCanPrice, hasTotalLen, hasMPrice };
+
+    document.getElementById('r_mPerCanLabel').textContent = '施工可能延長（1' + unit + 'あたり）';
+    document.getElementById('r_mPerCan').textContent    = fmtD(mWithLoss) + ' m';
+    document.getElementById('r_mPerCanSub').textContent = MATERIAL_LABEL[selectedMaterial] + ' / ' + width + '×' + depth + 'mm';
+    document.getElementById('r_mNoLoss').textContent    = fmtD(mNoLoss) + ' m';
+    document.getElementById('r_mWithLoss').textContent  = fmtD(mWithLoss) + ' m';
+    document.getElementById('lossLabel').textContent    = 'ロス込み（' + lossRate + '%' + (isDefaultLoss ? '・デフォルト' : '') + '）';
+
+    const cpBlock = document.getElementById('costPerMBlock');
+    if (costPerM !== null) {
+      cpBlock.style.display = 'block';
+      document.getElementById('r_costPerM').textContent = '¥' + fmtD(costPerM);
+    } else { cpBlock.style.display = 'none'; }
+
+    const cansBlock = document.getElementById('cansBlock');
+    if (hasTotalLen) {
+      cansBlock.style.display = 'block';
+      document.getElementById('r_cans').textContent = cansNeeded + ' ' + unit;
+      const matCard = document.getElementById('materialCostCard');
+      if (materialCost !== null) {
+        matCard.style.display = 'block';
+        document.getElementById('r_materialCost').textContent = '¥' + fmt(materialCost);
+      } else { matCard.style.display = 'none'; }
+    } else { cansBlock.style.display = 'none'; }
+
+    const primerBlock = document.getElementById('primerBlock');
+    if (hasTotalLen) {
+      primerBlock.style.display = 'block';
+      document.getElementById('r_primerMl').textContent = fmt(primerMl) + ' ml';
+      const primerCostRow = document.getElementById('primerCostRow');
+      if (hasPrimerCanMl) {
+        document.getElementById('r_primerCans').textContent = primerCans + ' 缶';
+        if (primerCost !== null) {
+          primerCostRow.style.display = 'grid';
+          document.getElementById('r_primerCost').textContent = '¥' + fmt(primerCost);
+        } else { primerCostRow.style.display = 'none'; }
+      } else {
+        document.getElementById('r_primerCans').textContent = '—';
+        primerCostRow.style.display = 'none';
+      }
+    } else { primerBlock.style.display = 'none'; }
+
+    const revenueBlock = document.getElementById('revenueBlock');
+    if (hasTotalLen && hasMPrice) {
+      revenueBlock.style.display = 'block';
+      document.getElementById('r_revenue').textContent = '¥' + fmt(revenue);
+      updateRevenue();
+    } else { revenueBlock.style.display = 'none'; }
+
+    document.getElementById('resultWrap').classList.add('show');
+  }
+
+  function updateRevenue() {
+    if (!calc.hasTotalLen || !calc.hasMPrice) return;
+
+    const isOutsource = resultRemoval === 'outsource';
+    const rOp = parseFloat(document.getElementById('rOutsourcePrice').value);
+    const outsourceCostPerM = (isOutsource && !isNaN(rOp) && rOp > 0) ? rOp : 0;
+    const removalCost = outsourceCostPerM * calc.totalLen;
+    const materialCost = calc.materialCost || 0;
+    const profit = calc.revenue - materialCost - removalCost;
+    const margin = (profit / calc.revenue) * 100;
+
+    const removalCard = document.getElementById('r_removalCostCard');
+    if (isOutsource && outsourceCostPerM > 0) {
+      removalCard.style.display = 'block';
+      document.getElementById('r_removalCost').textContent = '−¥' + fmt(removalCost);
+    } else { removalCard.style.display = 'none'; }
+
+    let profitSub = calc.hasCanPrice ? '請求 − 材料費' : '材料費未入力';
+    if (isOutsource && outsourceCostPerM > 0) profitSub = '請求 − 材料費 − 撤去外注費';
+
+    document.getElementById('r_profit').textContent    = (profit >= 0 ? '+' : '') + '¥' + fmt(profit);
+    document.getElementById('r_profitSub').textContent = profitSub;
+    document.getElementById('r_margin').textContent    = fmtD(margin) + '%';
+    document.getElementById('r_marginNote').textContent = margin >= 50 ? '良好' : margin >= 30 ? '標準' : '要見直し';
+
+    const salesBlock = document.getElementById('outsourceSalesBlock');
+    if (isOutsource && outsourceCostPerM > 0) {
+      const selfPerM  = calc.mPrice - outsourceCostPerM - (calc.costPerM || 0);
+      const selfTotal = selfPerM * calc.totalLen;
+      salesBlock.style.display = 'block';
+      document.getElementById('r_selfPerM').textContent  = '¥' + fmtD(selfPerM);
+      document.getElementById('r_selfTotal').textContent = '¥' + fmt(selfTotal);
+    } else { salesBlock.style.display = 'none'; }
+  }
+</script>
+</body>
+</html>
